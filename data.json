@@ -1,0 +1,26 @@
+[
+    {
+        "title": "영업 데이터 분석 담당자",
+        "company": "A기업",
+        "address": "서울특별시 강남구 테헤란로 123",
+        "platform": "원티드",
+        "lat": null,
+        "lng": null
+    },
+    {
+        "title": "B2B 굿즈 사업 기획 및 영업",
+        "company": "B기업",
+        "address": "경기도 성남시 분당구 판교역로 146",
+        "platform": "사람인",
+        "lat": null,
+        "lng": null
+    },
+    {
+        "title": "신제품 출시 및 마케팅 전략 기획",
+        "company": "C기업",
+        "address": "서울특별시 송파구 올림픽로 300",
+        "platform": "잡코리아",
+        "lat": null,
+        "lng": null
+    }
+]
