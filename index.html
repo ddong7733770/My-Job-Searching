@@ -3,82 +3,279 @@
 <head>
     <meta charset="UTF-8">
     <title>통합 채용 대시보드</title>
-    <!-- 구글 맵스 API 호출 (반드시 본인의 키로 교체하세요) -->
-    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyD58_op_8WHl3c9iVmjVTLtTmz9yDTQCZw"></script>
+    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyD58_op_8WHl3c9iVmjVTLtTmz9yDTQCZw&libraries=places"></script>
     <style>
-        body { font-family: 'Malgun Gothic', sans-serif; margin: 20px; }
+        body { font-family: 'Malgun Gothic', sans-serif; margin: 20px; color: #333; }
+        .filter-section { background: #f8f9fa; padding: 20px; border-radius: 8px; margin-bottom: 20px; }
+        .filter-group { margin-bottom: 15px; }
+        .filter-group strong { display: inline-block; width: 80px; }
+        .btn { padding: 6px 12px; margin-right: 5px; border: 1px solid #ccc; background: white; border-radius: 20px; cursor: pointer; font-size: 13px; }
+        .btn.active { background: #007bff; color: white; border-color: #007bff; }
+        select, input[type="text"] { padding: 6px; border: 1px solid #ccc; border-radius: 4px; }
+        input[type="text"] { width: 300px; }
+        
         #container { display: flex; gap: 20px; }
         #map { width: 60%; height: 600px; border-radius: 8px; border: 1px solid #ccc; }
-        #list { width: 40%; height: 600px; overflow-y: auto; }
-        .job-card { padding: 15px; margin-bottom: 15px; border: 1px solid #eee; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
-        .platform-badge { display: inline-block; padding: 3px 8px; font-size: 12px; color: white; background-color: #007bff; border-radius: 4px; margin-bottom: 5px; }
+        #list { width: 40%; height: 600px; overflow-y: auto; padding-right: 10px; }
+        .job-card { padding: 15px; margin-bottom: 15px; border: 1px solid #eee; border-radius: 8px; cursor: pointer; transition: 0.2s; background: white; }
+        .job-card:hover { box-shadow: 0 4px 8px rgba(0,0,0,0.1); border-color: #007bff; }
+        .platform-badge { display: inline-block; padding: 3px 8px; font-size: 12px; color: white; background-color: #333; border-radius: 4px; margin-bottom: 5px; }
+        .dist-badge { color: #d9534f; font-weight: bold; font-size: 13px; float: right; }
+        
+        /* 플랫폼별 색상 */
+        .plat-사람인 { background: #4876ef; }
+        .plat-잡코리아 { background: #003a8c; }
+        .plat-원티드 { background: #2b5ff1; }
+        .plat-리멤버 { background: #ff7b30; }
     </style>
 </head>
 <body>
     <h2>🎯 내 직무 맞춤 채용 정보</h2>
     
+    <div class="filter-section">
+        <div class="filter-group" id="platform-filters">
+            <strong>플랫폼</strong>
+            <button class="btn platform-btn active" data-val="전체">전체</button>
+            <button class="btn platform-btn" data-val="사람인">사람인</button>
+            <button class="btn platform-btn" data-val="잡코리아">잡코리아</button>
+            <button class="btn platform-btn" data-val="원티드">원티드</button>
+            <button class="btn platform-btn" data-val="리멤버">리멤버</button>
+        </div>
+        
+        <div class="filter-group">
+            <strong>경력 연차</strong>
+            <select id="exp-filter">
+                <option value="전체">전체</option>
+                <option value="신입">신입</option>
+                <option value="경력">경력 (연차 무관)</option>
+                <option value="1~3년">1~3년</option>
+                <option value="4~6년">4~6년</option>
+                <option value="7년 이상">7년 이상</option>
+            </select>
+        </div>
+
+        <div class="filter-group" id="region-filters">
+            <strong>지역 선택</strong>
+            <button class="btn region-btn active" data-val="전체">전체</button>
+            <button class="btn region-btn" data-val="서울">서울시</button>
+            <button class="btn region-btn" data-val="성남">성남시</button>
+            <button class="btn region-btn" data-val="용인">용인시</button>
+            <button class="btn region-btn" data-val="하남">하남시</button>
+            <button class="btn region-btn" data-val="경기">경기도</button>
+        </div>
+
+        <div class="filter-group">
+            <strong>거주지 기준</strong>
+            <input type="text" id="base-address" value="경기도 용인시 수지구 죽전동 동성2차 아파트">
+            <button class="btn" id="set-base-btn" style="background: #333; color: white;">위치 갱신</button>
+            
+            <span id="radius-filters" style="margin-left: 15px;">
+                <button class="btn radius-btn active" data-val="999">전체 거리</button>
+                <button class="btn radius-btn" data-val="5">반경 5km</button>
+                <button class="btn radius-btn" data-val="10">10km</button>
+                <button class="btn radius-btn" data-val="20">20km</button>
+                <button class="btn radius-btn" data-val="30">30km</button>
+            </span>
+            
+            <button class="btn" id="sort-btn" style="float: right; border-color: #d9534f; color: #d9534f;">가까운 순 정렬 ↓</button>
+        </div>
+    </div>
+
     <div id="container">
-        <!-- 좌측 지도 영역 -->
         <div id="map"></div>
-        <!-- 우측 리스트 영역 -->
         <div id="list"></div>
     </div>
 
     <script>
-        // 기준 주소 세팅 (경기도 용인시 수지구 죽전동 기준 좌표)
-        const baseLocation = { lat: 37.3253, lng: 127.1118 }; 
+        let map, geocoder, baseMarker;
+        let allJobs = [];
+        let markers = [];
+        let currentBaseLoc = { lat: 37.3253, lng: 127.1118 }; // 죽전동 기본 좌표
+        
+        // 필터 상태 변수
+        let selectedPlatforms = ['전체'];
+        let selectedRegions = ['전체'];
+        let selectedRadius = 999;
+        let sortByDistance = false;
+
+        // 두 좌표 간 거리 계산 (Haversine 공식, km 반환)
+        function getDistance(lat1, lon1, lat2, lon2) {
+            if (!lat1 || !lon1 || !lat2 || !lon2) return 999;
+            const R = 6371;
+            const dLat = (lat2 - lat1) * Math.PI / 180;
+            const dLon = (lon2 - lon1) * Math.PI / 180;
+            const a = Math.sin(dLat/2) * Math.sin(dLat/2) + 
+                      Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * 
+                      Math.sin(dLon/2) * Math.sin(dLon/2);
+            return R * (2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a)));
+        }
 
         function initMap() {
-            const map = new google.maps.Map(document.getElementById("map"), {
+            geocoder = new google.maps.Geocoder();
+            map = new google.maps.Map(document.getElementById("map"), {
                 zoom: 11,
-                center: baseLocation,
+                center: currentBaseLoc,
             });
 
-            // 내 위치 마커 표시
-            new google.maps.Marker({
-                position: baseLocation,
+            baseMarker = new google.maps.Marker({
+                position: currentBaseLoc,
                 map: map,
-                label: "집",
-                icon: "http://maps.google.com/mapfiles/ms/icons/blue-dot.png"
+                label: "🏠",
+                title: "거주지 (기준점)"
             });
 
-            const listContainer = document.getElementById("list");
-
-            // 방금 봇이 생성한 data.json 파일 불러오기
+            // 데이터 불러오기
             fetch('./data.json')
-                .then(response => response.json())
-                .then(jobs => {
-                    jobs.forEach(job => {
-                        // 리스트에 공고 추가
-                        const card = document.createElement('div');
-                        card.className = 'job-card';
-                        card.innerHTML = `
-                            <span class="platform-badge">${job.platform}</span>
-                            <h3>${job.title}</h3>
-                            <p><strong>${job.company}</strong></p>
-                            <p style="font-size: 14px; color: #666;">📍 ${job.address}</p>
-                        `;
-                        listContainer.appendChild(card);
-
-                        // 지도에 마커 추가
-                        if (job.lat && job.lng) {
-                            const marker = new google.maps.Marker({
-                                position: { lat: job.lat, lng: job.lng },
-                                map: map,
-                                title: job.company + " - " + job.title
-                            });
-                            
-                            // 마커 클릭 시 정보창 띄우기
-                            const infoWindow = new google.maps.InfoWindow({
-                                content: `<div><b>${job.company}</b><br>${job.title}</div>`
-                            });
-                            marker.addListener("click", () => {
-                                infoWindow.open(map, marker);
-                            });
-                        }
-                    });
+                .then(res => res.json())
+                .then(data => {
+                    allJobs = data;
+                    updateDistances();
+                    renderData();
                 });
         }
+
+        function updateDistances() {
+            allJobs.forEach(job => {
+                job.distance = getDistance(currentBaseLoc.lat, currentBaseLoc.lng, job.lat, job.lng);
+            });
+        }
+
+        function renderData() {
+            const listContainer = document.getElementById("list");
+            listContainer.innerHTML = '';
+            
+            // 마커 초기화
+            markers.forEach(m => m.setMap(null));
+            markers = [];
+
+            // 1. 필터링 로직
+            let filtered = allJobs.filter(job => {
+                // 플랫폼 필터
+                if (!selectedPlatforms.includes('전체') && !selectedPlatforms.includes(job.platform)) return false;
+                
+                // 지역 필터 (공고 주소에 선택된 지역 텍스트가 포함되어 있는지)
+                if (!selectedRegions.includes('전체')) {
+                    const matchRegion = selectedRegions.some(region => job.address.includes(region));
+                    if (!matchRegion) return false;
+                }
+                
+                // 반경 필터
+                if (job.distance > selectedRadius) return false;
+                
+                return true;
+            });
+
+            // 2. 정렬 로직
+            if (sortByDistance) {
+                filtered.sort((a, b) => a.distance - b.distance);
+            }
+
+            // 3. 렌더링
+            filtered.forEach(job => {
+                const distText = job.distance === 999 ? '거리 미상' : job.distance.toFixed(1) + ' km';
+                
+                const card = document.createElement('div');
+                card.className = 'job-card';
+                card.onclick = () => window.open(job.link || '#', '_blank'); // 박스 클릭 시 새창 링크
+                card.innerHTML = `
+                    <span class="platform-badge plat-${job.platform}">${job.platform}</span>
+                    <span class="dist-badge">📍 ${distText}</span>
+                    <h3 style="margin: 10px 0;">${job.title}</h3>
+                    <p style="margin: 0;"><strong>${job.company}</strong></p>
+                    <p style="font-size: 13px; color: #666; margin-top: 5px;">${job.address}</p>
+                `;
+                listContainer.appendChild(card);
+
+                if (job.lat && job.lng) {
+                    const marker = new google.maps.Marker({
+                        position: { lat: job.lat, lng: job.lng },
+                        map: map,
+                        title: job.company
+                    });
+                    const info = new google.maps.InfoWindow({
+                        content: `<div style="padding:5px;"><b>${job.company}</b><br>${job.title}<br><a href="${job.link || '#'}" target="_blank">공고 보기</a></div>`
+                    });
+                    marker.addListener("click", () => info.open(map, marker));
+                    markers.push(marker);
+                }
+            });
+            document.getElementById('sort-btn').innerText = `가까운 순 정렬 ↓ (검색결과: ${filtered.length}건)`;
+        }
+
+        // --- UI 이벤트 리스너 ---
+
+        // 다중 선택 버튼 토글 로직
+        function handleMultiSelect(e, arrayRef) {
+            if(e.target.tagName !== 'BUTTON') return;
+            const val = e.target.getAttribute('data-val');
+            
+            if (val === '전체') {
+                arrayRef.length = 0;
+                arrayRef.push('전체');
+                Array.from(e.target.parentElement.children).forEach(btn => btn.classList.remove('active'));
+                e.target.classList.add('active');
+            } else {
+                const idx = arrayRef.indexOf('전체');
+                if (idx > -1) {
+                    arrayRef.splice(idx, 1);
+                    e.target.parentElement.querySelector('[data-val="전체"]').classList.remove('active');
+                }
+                
+                if (arrayRef.includes(val)) {
+                    arrayRef.splice(arrayRef.indexOf(val), 1);
+                    e.target.classList.remove('active');
+                    // 다 해제되면 전체로 복귀
+                    if(arrayRef.length === 0) {
+                        arrayRef.push('전체');
+                        e.target.parentElement.querySelector('[data-val="전체"]').classList.add('active');
+                    }
+                } else {
+                    arrayRef.push(val);
+                    e.target.classList.add('active');
+                }
+            }
+            renderData();
+        }
+
+        document.getElementById('platform-filters').addEventListener('click', e => handleMultiSelect(e, selectedPlatforms));
+        document.getElementById('region-filters').addEventListener('click', e => handleMultiSelect(e, selectedRegions));
+
+        // 반경 단일 선택 로직
+        document.getElementById('radius-filters').addEventListener('click', e => {
+            if(e.target.tagName !== 'BUTTON') return;
+            selectedRadius = parseInt(e.target.getAttribute('data-val'));
+            Array.from(e.target.parentElement.children).forEach(btn => btn.classList.remove('active'));
+            e.target.classList.add('active');
+            renderData();
+        });
+
+        // 주소 갱신 (지오코딩)
+        document.getElementById('set-base-btn').addEventListener('click', () => {
+            const addr = document.getElementById('base-address').value;
+            geocoder.geocode({ address: addr }, (results, status) => {
+                if (status === 'OK') {
+                    currentBaseLoc = {
+                        lat: results[0].geometry.location.lat(),
+                        lng: results[0].geometry.location.lng()
+                    };
+                    baseMarker.setPosition(currentBaseLoc);
+                    map.setCenter(currentBaseLoc);
+                    updateDistances();
+                    renderData();
+                } else {
+                    alert("주소를 찾을 수 없습니다. 정확한 도로명/지번을 입력해주세요.");
+                }
+            });
+        });
+
+        // 정렬 버튼
+        document.getElementById('sort-btn').addEventListener('click', (e) => {
+            sortByDistance = !sortByDistance;
+            e.target.style.background = sortByDistance ? '#d9534f' : 'white';
+            e.target.style.color = sortByDistance ? 'white' : '#d9534f';
+            renderData();
+        });
+
         window.onload = initMap;
     </script>
 </body>
