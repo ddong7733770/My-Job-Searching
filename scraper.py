@@ -1,52 +1,76 @@
 import json
 import os
 import requests
+from bs4 import BeautifulSoup
 
-# 깃허브 Secret에 저장해둔 구글 API 키를 불러옵니다.
 api_key = os.environ.get("GOOGLE_MAPS_API_KEY")
 
-# 1. 수집된 채용 데이터 (현재는 크롤링 대신 임시 데이터를 넣었습니다)
-jobs = [
-    {
-        "title": "영업 데이터 분석 담당자", 
-        "company": "A기업", 
-        "address": "서울특별시 강남구 테헤란로 123", 
-        "platform": "원티드"
-    },
-    {
-        "title": "B2B 굿즈 사업 기획 및 영업", 
-        "company": "B기업", 
-        "address": "경기도 성남시 분당구 판교역로 146", 
-        "platform": "사람인"
-    },
-    {
-        "title": "신제품 출시 및 마케팅 전략 기획", 
-        "company": "C기업", 
-        "address": "서울특별시 송파구 올림픽로 300", 
-        "platform": "잡코리아"
+# 1. 실제 사람인(Saramin) 채용 정보 수집 함수
+def get_saramin_jobs(keyword):
+    jobs = []
+    # 사람인 검색 URL
+    url = f"https://www.saramin.co.kr/zf_user/search/recruit?searchword={keyword}"
+    
+    # 크롤링 차단을 막기 위해 일반 크롬 브라우저처럼 위장합니다.
+    headers = {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
     }
-]
+    
+    try:
+        response = requests.get(url, headers=headers)
+        soup = BeautifulSoup(response.text, 'html.parser')
+        
+        # 채용 공고 리스트 추출 (상위 15개)
+        job_cards = soup.select('.item_recruit')[:15]
+        
+        for card in job_cards:
+            title_elem = card.select_one('.job_tit a')
+            company_elem = card.select_one('.corp_name a')
+            condition_elems = card.select('.job_condition span')
+            
+            if title_elem and company_elem:
+                title = title_elem.text.strip()
+                company = company_elem.text.strip()
+                # 조건 목록 중 첫 번째가 보통 '지역(예: 서울 강남구)' 입니다.
+                address = condition_elems[0].text.strip() if condition_elems else "주소 미상"
+                
+                jobs.append({
+                    "platform": "사람인",
+                    "title": title,
+                    "company": company,
+                    "address": address
+                })
+    except Exception as e:
+        print(f"크롤링 오류: {e}")
+        
+    return jobs
 
-# 2. 구글 Geocoding API로 주소를 텍스트에서 좌표(위도/경도)로 변환하는 함수
+# 2. '영업기획' 키워드로 채용 정보 수집
+real_jobs = get_saramin_jobs("영업기획")
+
+# 3. 구글 API로 추출한 지역 이름을 좌표(위도/경도)로 변환
 def get_coords(address):
-    # API 키가 없으면 실행하지 않음
-    if not api_key:
+    if not api_key or address == "주소 미상":
         return None, None
         
-    url = f"https://maps.googleapis.com/maps/api/geocode/json?address={address}&key={api_key}"
-    res = requests.get(url).json()
+    # 정확도를 높이기 위해 주소 뒤에 '대한민국'을 붙여 검색합니다.
+    search_address = f"{address} 대한민국"
+    url = f"https://maps.googleapis.com/maps/api/geocode/json?address={search_address}&key={api_key}"
     
-    if res.get('status') == 'OK':
-        loc = res['results'][0]['geometry']['location']
-        return loc['lat'], loc['lng']
+    try:
+        res = requests.get(url).json()
+        if res.get('status') == 'OK':
+            loc = res['results'][0]['geometry']['location']
+            return loc['lat'], loc['lng']
+    except:
+        pass
     return None, None
 
-# 3. 위에서 만든 임시 데이터의 주소를 하나씩 꺼내서 위도/경도를 찾아 추가합니다.
-for job in jobs:
+for job in real_jobs:
     lat, lng = get_coords(job["address"])
     job["lat"] = lat
     job["lng"] = lng
 
-# 4. 나중에 웹 화면(index.html)에서 읽을 수 있도록 data.json 파일로 저장합니다.
+# 4. 수집한 진짜 데이터를 data.json 파일로 저장
 with open('data.json', 'w', encoding='utf-8') as f:
-    json.dump(jobs, f, ensure_ascii=False, indent=4)
+    json.dump(real_jobs, f, ensure_ascii=False, indent=4)
