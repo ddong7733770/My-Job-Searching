@@ -1,25 +1,121 @@
 [
     {
-        "title": "영업 데이터 분석 담당자",
-        "company": "A기업",
-        "address": "서울특별시 강남구 테헤란로 123",
-        "platform": "원티드",
-        "lat": null,
-        "lng": null
-    },
-    {
-        "title": "B2B 굿즈 사업 기획 및 영업",
-        "company": "B기업",
-        "address": "경기도 성남시 분당구 판교역로 146",
         "platform": "사람인",
+        "title": "[BYC] 영업기획/관리 신입사원 채용",
+        "company": "(주)BYC",
+        "address": "서울 영등포구",
         "lat": null,
         "lng": null
     },
     {
-        "title": "신제품 출시 및 마케팅 전략 기획",
-        "company": "C기업",
-        "address": "서울특별시 송파구 올림픽로 300",
-        "platform": "잡코리아",
+        "platform": "사람인",
+        "title": "각 부문별 정규직 채용(기술영업/방역영업/영업기획/연구개발)",
+        "company": "(주)트라코월드",
+        "address": "경기 광명시",
+        "lat": null,
+        "lng": null
+    },
+    {
+        "platform": "사람인",
+        "title": "(주)한국비엠아이 영업기획팀 신입 또는 경력사원 모집",
+        "company": "(주)한국비엠아이",
+        "address": "경기 의왕시",
+        "lat": null,
+        "lng": null
+    },
+    {
+        "platform": "사람인",
+        "title": "자동차 디스플레이 PM,영업,영업기획,구매 인재 모집",
+        "company": "이씨아이(주)",
+        "address": "충남 천안시 서북구",
+        "lat": null,
+        "lng": null
+    },
+    {
+        "platform": "사람인",
+        "title": "[정규직] 영업기획부 팀원 채용(신입)",
+        "company": "(주)미래이씨피",
+        "address": "서울 영등포구",
+        "lat": null,
+        "lng": null
+    },
+    {
+        "platform": "사람인",
+        "title": "[웰리힐리파크] 영업기획팀 정규직 채용",
+        "company": "신안종합리조트(주)",
+        "address": "강원 횡성군",
+        "lat": null,
+        "lng": null
+    },
+    {
+        "platform": "사람인",
+        "title": "[비케이브] 와키윌리 영업기획 팀장 채용",
+        "company": "(주)비케이브",
+        "address": "서울 마포구",
+        "lat": null,
+        "lng": null
+    },
+    {
+        "platform": "사람인",
+        "title": "[리테일본부] 영업기획(관리) 담당",
+        "company": "(주)선우프레시",
+        "address": "서울 서초구",
+        "lat": null,
+        "lng": null
+    },
+    {
+        "platform": "사람인",
+        "title": "출판사 출판 영업기획팀 영업지원 및 운영 담당자 채용",
+        "company": "(주)좋은땅",
+        "address": "서울 마포구",
+        "lat": null,
+        "lng": null
+    },
+    {
+        "platform": "사람인",
+        "title": "AI 마케팅·영업기획 담당자 채용",
+        "company": "(주)더프라임그룹",
+        "address": "경북 경산시",
+        "lat": null,
+        "lng": null
+    },
+    {
+        "platform": "사람인",
+        "title": "[ 팔라티움 해운대 By SONO ] 마케팅 & 영업기획 채용",
+        "company": "주)팔라티움해운대바이소노펠리체",
+        "address": "부산 해운대구",
+        "lat": null,
+        "lng": null
+    },
+    {
+        "platform": "사람인",
+        "title": "화장품 사업부 공개채용 (책임연구원/품질관리/영업기획)",
+        "company": "(주)한국미라클피플사",
+        "address": "경기 포천시",
+        "lat": null,
+        "lng": null
+    },
+    {
+        "platform": "사람인",
+        "title": "[신입]영업지원·영업관리·영업기획 팀원 모집/중식제공",
+        "company": "(주)자노탁트코리아",
+        "address": "서울 금천구",
+        "lat": null,
+        "lng": null
+    },
+    {
+        "platform": "사람인",
+        "title": "신성통상(주) OLZEN 영업기획MD 채용 (경력무관)",
+        "company": "신성통상(주)",
+        "address": "서울 강동구",
+        "lat": null,
+        "lng": null
+    },
+    {
+        "platform": "사람인",
+        "title": "(주)플로원 서울본사 - 영업기획팀 구매관리 신입 채용",
+        "company": "(주)플로원",
+        "address": "서울 서초구",
         "lat": null,
         "lng": null
     }
