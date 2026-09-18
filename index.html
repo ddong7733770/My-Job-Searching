@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>통합 채용 대시보드</title>
+    <!-- 구글 맵스 API 호출 (반드시 본인의 키로 교체하세요) -->
+    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyD58_op_8WHl3c9iVmjVTLtTmz9yDTQCZw"></script>
+    <style>
+        body { font-family: 'Malgun Gothic', sans-serif; margin: 20px; }
+        #container { display: flex; gap: 20px; }
+        #map { width: 60%; height: 600px; border-radius: 8px; border: 1px solid #ccc; }
+        #list { width: 40%; height: 600px; overflow-y: auto; }
+        .job-card { padding: 15px; margin-bottom: 15px; border: 1px solid #eee; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+        .platform-badge { display: inline-block; padding: 3px 8px; font-size: 12px; color: white; background-color: #007bff; border-radius: 4px; margin-bottom: 5px; }
+    </style>
+</head>
+<body>
+    <h2>🎯 내 직무 맞춤 채용 정보</h2>
+    
+    <div id="container">
+        <!-- 좌측 지도 영역 -->
+        <div id="map"></div>
+        <!-- 우측 리스트 영역 -->
+        <div id="list"></div>
+    </div>
+
+    <script>
+        // 기준 주소 세팅 (경기도 용인시 수지구 죽전동 기준 좌표)
+        const baseLocation = { lat: 37.3253, lng: 127.1118 }; 
+
+        function initMap() {
+            const map = new google.maps.Map(document.getElementById("map"), {
+                zoom: 11,
+                center: baseLocation,
+            });
+
+            // 내 위치 마커 표시
+            new google.maps.Marker({
+                position: baseLocation,
+                map: map,
+                label: "집",
+                icon: "http://maps.google.com/mapfiles/ms/icons/blue-dot.png"
+            });
+
+            const listContainer = document.getElementById("list");
+
+            // 방금 봇이 생성한 data.json 파일 불러오기
+            fetch('./data.json')
+                .then(response => response.json())
+                .then(jobs => {
+                    jobs.forEach(job => {
+                        // 리스트에 공고 추가
+                        const card = document.createElement('div');
+                        card.className = 'job-card';
+                        card.innerHTML = `
+                            <span class="platform-badge">${job.platform}</span>
+                            <h3>${job.title}</h3>
+                            <p><strong>${job.company}</strong></p>
+                            <p style="font-size: 14px; color: #666;">📍 ${job.address}</p>
+                        `;
+                        listContainer.appendChild(card);
+
+                        // 지도에 마커 추가
+                        if (job.lat && job.lng) {
+                            const marker = new google.maps.Marker({
+                                position: { lat: job.lat, lng: job.lng },
+                                map: map,
+                                title: job.company + " - " + job.title
+                            });
+                            
+                            // 마커 클릭 시 정보창 띄우기
+                            const infoWindow = new google.maps.InfoWindow({
+                                content: `<div><b>${job.company}</b><br>${job.title}</div>`
+                            });
+                            marker.addListener("click", () => {
+                                infoWindow.open(map, marker);
+                            });
+                        }
+                    });
+                });
+        }
+        window.onload = initMap;
+    </script>
+</body>
+</html>
