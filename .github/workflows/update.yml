@@ -12,7 +12,7 @@ jobs:
       with:
         python-version: '3.9'
     - name: 패키지 설치
-      run: pip install requests beautifulsoup4 selenium webdriver-manager
+      run: pip install requests beautifulsoup4
     - name: 파이썬 데이터 수집 실행
       env:
         GOOGLE_MAPS_API_KEY: ${{ secrets.GOOGLE_MAPS_API_KEY }}
@@ -22,5 +22,5 @@ jobs:
         git config --local user.email "action@github.com"
         git config --local user.name "GitHub Action"
         git add data.json
-        git commit -m "4개 통합 채용 데이터 업데이트" || exit 0
+        git commit -m "상세주소 및 API 데이터 업데이트" || exit 0
         git push
