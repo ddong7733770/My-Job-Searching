@@ -3,70 +3,113 @@
 <head>
     <meta charset="UTF-8">
     <title>통합 채용 대시보드</title>
-    <!-- 구글 맵스 API (API 키 입력 필수) -->
+    <!-- 구글 맵스 API (본인 API 키 입력 필수) -->
     <script src="https://maps.googleapis.com/maps/api/js?key=본인의_구글_API_키를_여기에_입력하세요"></script>
     <style>
-        body { font-family: 'Malgun Gothic', sans-serif; margin: 20px; color: #333; }
-        .filter-section { background: #f8f9fa; padding: 20px; border-radius: 8px; margin-bottom: 20px; }
-        .filter-group { margin-bottom: 15px; }
-        .filter-group strong { display: inline-block; width: 80px; }
-        .btn { padding: 6px 12px; margin-right: 5px; border: 1px solid #ccc; background: white; border-radius: 20px; cursor: pointer; font-size: 13px; }
-        .btn.active { background: #007bff; color: white; border-color: #007bff; }
-        select, input[type="text"] { padding: 6px; border: 1px solid #ccc; border-radius: 4px; }
-        input[type="text"] { width: 350px; }
+        body { font-family: 'Malgun Gothic', sans-serif; margin: 20px; color: #333; background: #f4f7f6; }
+        .filter-section { background: white; padding: 25px; border-radius: 12px; margin-bottom: 20px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); }
+        .filter-group { margin-bottom: 15px; display: flex; align-items: center; flex-wrap: wrap; }
+        .filter-group strong { display: inline-block; width: 100px; color: #555; }
+        .btn { padding: 8px 16px; margin-right: 8px; margin-bottom: 8px; border: 1px solid #ddd; background: white; border-radius: 20px; cursor: pointer; font-size: 13px; transition: 0.2s; color: #555; }
+        .btn:hover { background: #f8f9fa; }
+        .btn.active { background: #333; color: white; border-color: #333; font-weight: bold; }
+        
+        input[type="text"] { padding: 8px 12px; border: 1px solid #ddd; border-radius: 4px; width: 400px; margin-right: 8px; }
         
         #container { display: flex; gap: 20px; }
-        #map { width: 60%; height: 600px; border-radius: 8px; border: 1px solid #ccc; cursor: crosshair; }
-        #list { width: 40%; height: 600px; overflow-y: auto; padding-right: 10px; }
-        .job-card { padding: 15px; margin-bottom: 15px; border: 1px solid #eee; border-radius: 8px; cursor: pointer; transition: 0.2s; background: white; }
-        .job-card:hover { box-shadow: 0 4px 8px rgba(0,0,0,0.1); border-color: #007bff; }
-        .platform-badge { display: inline-block; padding: 3px 8px; font-size: 12px; color: white; background-color: #333; border-radius: 4px; margin-bottom: 5px; }
-        .exp-badge { display: inline-block; padding: 3px 8px; font-size: 12px; color: #007bff; background-color: #e7f1ff; border-radius: 4px; margin-bottom: 5px; border: 1px solid #007bff; }
-        .dist-badge { color: #d9534f; font-weight: bold; font-size: 13px; float: right; }
+        #map-container { width: 55%; background: white; padding: 15px; border-radius: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); }
+        #map { width: 100%; height: 750px; border-radius: 8px; cursor: crosshair; }
+        #list-container { width: 45%; display: flex; flex-direction: column; gap: 15px; }
         
+        .job-card { padding: 18px; border: 1px solid #eee; border-radius: 10px; cursor: pointer; transition: 0.2s; background: white; box-shadow: 0 2px 5px rgba(0,0,0,0.02); }
+        .job-card:hover { box-shadow: 0 5px 15px rgba(0,0,0,0.08); border-color: #555; transform: translateY(-2px); }
+        .platform-badge { display: inline-block; padding: 4px 10px; font-size: 12px; font-weight: bold; color: white; border-radius: 6px; margin-bottom: 8px; }
+        .exp-badge { display: inline-block; padding: 4px 10px; font-size: 12px; color: #555; background-color: #f1f1f1; border-radius: 6px; margin-left: 5px; margin-bottom: 8px; }
+        .dist-badge { color: #e74c3c; font-weight: bold; font-size: 14px; float: right; margin-top: 2px; }
+        
+        /* 플랫폼별 색상 */
         .plat-사람인 { background: #4876ef; }
         .plat-잡코리아 { background: #003a8c; }
         .plat-원티드 { background: #2b5ff1; }
         .plat-리멤버 { background: #ff7b30; }
+
+        /* 페이지네이션 */
+        #pagination { display: flex; justify-content: center; gap: 5px; margin-top: 15px; padding-bottom: 20px; flex-wrap: wrap; }
+        .page-btn { padding: 6px 12px; border: 1px solid #ddd; background: white; cursor: pointer; border-radius: 4px; }
+        .page-btn.active { background: #333; color: white; border-color: #333; }
     </style>
 </head>
 <body>
-    <h2>🎯 내 직무 맞춤 채용 정보</h2>
+    <h2>🚀 실시간 채용 통합 검색</h2>
     
     <div class="filter-section">
-        <div class="filter-group">
-            <strong>거주지 기준</strong>
-            <input type="text" id="base-address" placeholder="도로명/지번 검색 또는 지도 클릭" value="경기도 용인시 수지구 죽전동 동성2차 아파트">
-            <button class="btn" id="set-base-btn" style="background: #333; color: white;">주소 검색</button>
-            <span style="font-size: 12px; color: #666; margin-left: 10px;">(💡 지도 위를 클릭해도 기준 위치가 변경됩니다)</span>
-            
-            <div style="margin-top: 10px; padding-left: 85px;" id="radius-filters">
-                <button class="btn radius-btn active" data-val="999">전체 거리</button>
-                <button class="btn radius-btn" data-val="5">반경 5km</button>
-                <button class="btn radius-btn" data-val="10">10km</button>
-                <button class="btn radius-btn" data-val="20">20km</button>
-                <button class="btn radius-btn" data-val="30">30km</button>
-            </div>
+        <div class="filter-group" id="platform-filters">
+            <strong>플랫폼 선택</strong>
+            <button class="btn platform-btn active" data-val="전체">전체</button>
+            <button class="btn platform-btn" data-val="사람인">사람인</button>
+            <button class="btn platform-btn" data-val="잡코리아">잡코리아</button>
+            <button class="btn platform-btn" data-val="원티드">원티드</button>
+            <button class="btn platform-btn" data-val="리멤버">리멤버</button>
+        </div>
+
+        <div class="filter-group" id="exp-filters">
+            <strong>경력 선택</strong>
+            <button class="btn exp-btn active" data-val="전체">전체</button>
+            <button class="btn exp-btn" data-val="신입">신입</button>
+            <button class="btn exp-btn" data-val="경력">경력</button>
+            <button class="btn exp-btn" data-val="무관">경력 무관</button>
+        </div>
+
+        <div class="filter-group" id="radius-filters">
+            <strong>거리별 옵션</strong>
+            <button class="btn radius-btn active" data-val="999">전체 지역</button>
+            <button class="btn radius-btn" data-val="5">반경 5km</button>
+            <button class="btn radius-btn" data-val="10">10km</button>
+            <button class="btn radius-btn" data-val="20">20km</button>
+            <button class="btn radius-btn" data-val="30">30km</button>
         </div>
 
         <div class="filter-group" style="margin-bottom: 0;">
-            <button class="btn" id="sort-btn" style="border-color: #d9534f; color: #d9534f; width: 100%;">가까운 순 정렬 적용 ↓</button>
+            <strong>거주지 검색</strong>
+            <input type="text" id="base-address" value="경기도 용인시 수지구 죽전동 동성2차 아파트">
+            <button class="btn" id="set-base-btn" style="background: #e74c3c; color: white; border-color: #e74c3c;">지도 연동 적용</button>
+            <span style="font-size: 12px; color: #888; margin-left: 10px;">(지도 클릭 시에도 위치가 반영됩니다)</span>
         </div>
     </div>
 
     <div id="container">
-        <div id="map"></div>
-        <div id="list"></div>
+        <div id="map-container">
+            <div id="map"></div>
+        </div>
+        
+        <div style="width: 45%; display: flex; flex-direction: column;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                <span id="result-count" style="font-weight: bold; color: #333;"></span>
+                <button class="btn" id="sort-btn" style="border-color: #e74c3c; color: #e74c3c; font-weight: bold; margin: 0;">거리 가까운 순 ▽</button>
+            </div>
+            <!-- 리스트 영역 -->
+            <div id="list" style="overflow-y: auto; flex-grow: 1; padding-right: 10px; max-height: 700px;"></div>
+            <!-- 페이지네이션 영역 -->
+            <div id="pagination"></div>
+        </div>
     </div>
 
     <script>
         let map, geocoder, baseMarker;
         let allJobs = [];
         let markers = [];
-        let currentBaseLoc = { lat: 37.3253, lng: 127.1118 }; // 죽전동 동성2차
+        let currentBaseLoc = { lat: 37.3253, lng: 127.1118 }; // 죽전동 초기 세팅
         
+        // 필터 전역 변수
+        let selectedPlatform = '전체';
+        let selectedExp = '전체';
         let selectedRadius = 999;
         let sortByDistance = false;
+        
+        // 페이징 전역 변수
+        let currentPage = 1;
+        const itemsPerPage = 20;
+        let filteredJobs = [];
 
         function getDistance(lat1, lon1, lat2, lon2) {
             if (!lat1 || !lon1 || !lat2 || !lon2) return 999;
@@ -93,71 +136,99 @@
                 title: "거주지 (기준점)"
             });
 
-            // ⭐ [기능 추가] 지도 클릭 시 해당 위치로 기준점 변경 및 주소 역변환
+            // 지도 클릭 시 거주지 변경
             map.addListener('click', (e) => {
                 const clickedLoc = { lat: e.latLng.lat(), lng: e.latLng.lng() };
-                updateBaseLocation(clickedLoc);
+                currentBaseLoc = clickedLoc;
+                baseMarker.setPosition(currentBaseLoc);
+                map.setCenter(currentBaseLoc);
                 
-                // 역지오코딩: 좌표를 한글 주소로 변환하여 검색창에 입력
                 geocoder.geocode({ location: clickedLoc }, (results, status) => {
                     if (status === 'OK' && results[0]) {
                         document.getElementById('base-address').value = results[0].formatted_address.replace('대한민국 ', '');
                     }
                 });
+                applyFilters();
             });
 
             fetch('./data.json')
                 .then(res => res.json())
                 .then(data => {
                     allJobs = data;
-                    updateDistances();
-                    renderData();
+                    applyFilters();
                 });
         }
 
-        function updateBaseLocation(loc) {
-            currentBaseLoc = loc;
-            baseMarker.setPosition(currentBaseLoc);
-            map.setCenter(currentBaseLoc);
-            updateDistances();
-            renderData();
-        }
-
-        function updateDistances() {
+        // 필터 및 정렬 적용
+        function applyFilters() {
+            // 모든 데이터 거리 최신화
             allJobs.forEach(job => {
                 job.distance = getDistance(currentBaseLoc.lat, currentBaseLoc.lng, job.lat, job.lng);
             });
+
+            filteredJobs = allJobs.filter(job => {
+                // 플랫폼 단일 필터
+                if (selectedPlatform !== '전체' && job.platform !== selectedPlatform) return false;
+                
+                // 거리 필터
+                if (job.distance > selectedRadius) return false;
+                
+                // 경력 필터 (키워드 매칭)
+                if (selectedExp !== '전체') {
+                    const jobExp = job.experience || "";
+                    if (selectedExp === '신입' && !jobExp.includes('신입')) return false;
+                    if (selectedExp === '경력' && !jobExp.includes('경력')) return false;
+                    if (selectedExp === '무관' && !jobExp.includes('무관')) return false;
+                }
+                return true;
+            });
+
+            if (sortByDistance) {
+                filteredJobs.sort((a, b) => a.distance - b.distance);
+            }
+
+            currentPage = 1; // 필터 변경 시 무조건 1페이지로
+            renderPage();
         }
 
-        function renderData() {
+        // 페이지 렌더링 (20개씩 끊어서 표시)
+        function renderPage() {
             const listContainer = document.getElementById("list");
             listContainer.innerHTML = '';
+            
+            // 지도 마커 초기화
             markers.forEach(m => m.setMap(null));
             markers = [];
 
-            let filtered = allJobs.filter(job => job.distance <= selectedRadius);
+            const totalItems = filteredJobs.length;
+            const totalPages = Math.ceil(totalItems / itemsPerPage) || 1;
+            
+            document.getElementById('result-count').innerText = `총 ${totalItems}건 검색됨`;
 
-            if (sortByDistance) {
-                filtered.sort((a, b) => a.distance - b.distance);
-            }
+            const startIdx = (currentPage - 1) * itemsPerPage;
+            const endIdx = startIdx + itemsPerPage;
+            const pageData = filteredJobs.slice(startIdx, endIdx);
 
-            filtered.forEach(job => {
-                const distText = job.distance === 999 ? '거리 미상' : job.distance.toFixed(1) + ' km';
+            pageData.forEach(job => {
+                const distText = job.distance === 999 ? '상세주소 미제공' : job.distance.toFixed(1) + ' km';
                 const expText = job.experience ? job.experience : "경력 무관";
                 
                 const card = document.createElement('div');
                 card.className = 'job-card';
                 card.onclick = () => window.open(job.link || '#', '_blank');
                 card.innerHTML = `
-                    <span class="platform-badge plat-${job.platform}">${job.platform}</span>
-                    <span class="exp-badge">${expText}</span>
-                    <span class="dist-badge">📍 ${distText}</span>
-                    <h3 style="margin: 10px 0;">${job.title}</h3>
-                    <p style="margin: 0;"><strong>${job.company}</strong></p>
-                    <p style="font-size: 13px; color: #666; margin-top: 5px;">${job.address}</p>
+                    <div style="margin-bottom: 5px;">
+                        <span class="platform-badge plat-${job.platform}">${job.platform}</span>
+                        <span class="exp-badge">${expText}</span>
+                        <span class="dist-badge">📍 ${distText}</span>
+                    </div>
+                    <h3 style="margin: 8px 0; font-size: 16px; line-height: 1.4;">${job.title}</h3>
+                    <p style="margin: 0 0 5px 0; color: #222;"><strong>${job.company}</strong></p>
+                    <p style="font-size: 13px; color: #7f8c8d; margin: 0;">${job.address}</p>
                 `;
                 listContainer.appendChild(card);
 
+                // 현재 페이지의 데이터만 지도에 핀 표시
                 if (job.lat && job.lng) {
                     const marker = new google.maps.Marker({
                         position: { lat: job.lat, lng: job.lng },
@@ -165,35 +236,71 @@
                         title: job.company
                     });
                     const info = new google.maps.InfoWindow({
-                        content: `<div style="padding:5px;"><b>${job.company}</b><br>${expText}<br><a href="${job.link || '#'}" target="_blank">공고 보기</a></div>`
+                        content: `<div style="padding:10px; min-width:150px;">
+                                    <strong style="font-size:14px; color:#007bff;">${job.company}</strong><br>
+                                    <div style="margin-top:5px; font-size:12px;">${job.title}</div>
+                                    <a href="${job.link}" target="_blank" style="display:inline-block; margin-top:8px; font-size:11px; padding:4px 8px; background:#333; color:white; text-decoration:none; border-radius:4px;">채용공고 확인</a>
+                                  </div>`
                     });
                     marker.addListener("click", () => info.open(map, marker));
                     markers.push(marker);
                 }
             });
-            document.getElementById('sort-btn').innerText = `가까운 순 정렬 (총 ${filtered.length}건)`;
+
+            renderPagination(totalPages);
         }
 
-        // 반경 필터 버튼 이벤트
-        document.getElementById('radius-filters').addEventListener('click', e => {
+        // 페이지 버튼 생성
+        function renderPagination(totalPages) {
+            const pageContainer = document.getElementById("pagination");
+            pageContainer.innerHTML = '';
+            
+            for(let i = 1; i <= totalPages; i++) {
+                const btn = document.createElement('button');
+                btn.className = `page-btn ${i === currentPage ? 'active' : ''}`;
+                btn.innerText = i;
+                btn.onclick = () => {
+                    currentPage = i;
+                    renderPage();
+                    // 페이지 이동 시 리스트 스크롤 맨 위로
+                    document.getElementById('list').scrollTop = 0;
+                };
+                pageContainer.appendChild(btn);
+            }
+        }
+
+        // 단일 선택 버튼 이벤트 공통 함수
+        function handleSingleSelect(e, type) {
             if(e.target.tagName !== 'BUTTON') return;
-            selectedRadius = parseInt(e.target.getAttribute('data-val'));
             Array.from(e.target.parentElement.children).forEach(btn => btn.classList.remove('active'));
             e.target.classList.add('active');
-            renderData();
-        });
+            
+            const val = e.target.getAttribute('data-val');
+            if (type === 'platform') selectedPlatform = val;
+            if (type === 'exp') selectedExp = val;
+            if (type === 'radius') selectedRadius = parseInt(val);
+            
+            applyFilters();
+        }
 
-        // 텍스트 주소 검색 (도로명, 지번 모두 지원)
+        document.getElementById('platform-filters').addEventListener('click', e => handleSingleSelect(e, 'platform'));
+        document.getElementById('exp-filters').addEventListener('click', e => handleSingleSelect(e, 'exp'));
+        document.getElementById('radius-filters').addEventListener('click', e => handleSingleSelect(e, 'radius'));
+
+        // 주소 검색 연동 버튼
         document.getElementById('set-base-btn').addEventListener('click', () => {
             const addr = document.getElementById('base-address').value;
             geocoder.geocode({ address: addr }, (results, status) => {
                 if (status === 'OK') {
-                    updateBaseLocation({
+                    currentBaseLoc = {
                         lat: results[0].geometry.location.lat(),
                         lng: results[0].geometry.location.lng()
-                    });
+                    };
+                    baseMarker.setPosition(currentBaseLoc);
+                    map.setCenter(currentBaseLoc);
+                    applyFilters();
                 } else {
-                    alert("정확한 도로명 또는 지번 주소를 입력해주세요.");
+                    alert("주소를 찾을 수 없습니다. 조금 더 정확하게 입력해 주세요.");
                 }
             });
         });
@@ -201,9 +308,9 @@
         // 정렬 토글
         document.getElementById('sort-btn').addEventListener('click', (e) => {
             sortByDistance = !sortByDistance;
-            e.target.style.background = sortByDistance ? '#d9534f' : 'white';
-            e.target.style.color = sortByDistance ? 'white' : '#d9534f';
-            renderData();
+            e.target.style.background = sortByDistance ? '#e74c3c' : 'white';
+            e.target.style.color = sortByDistance ? 'white' : '#e74c3c';
+            applyFilters();
         });
 
         window.onload = initMap;
