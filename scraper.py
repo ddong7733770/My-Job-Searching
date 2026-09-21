@@ -28,74 +28,91 @@ def safe_append(platform, title, company, address, link, experience):
             "experience": experience.strip() if experience else "경력 무관"
         })
 
-# [1] 사람인 (수집량 최대 40~50개로 증가, 경력 추출 추가)
+# [1] 사람인 (최대 50건)
 try:
     driver.get(f"https://www.saramin.co.kr/zf_user/search/recruit?searchword={keyword}")
     time.sleep(2)
     soup = BeautifulSoup(driver.page_source, 'html.parser')
     for card in soup.select('.item_recruit')[:50]:
         title_elem = card.select_one('.job_tit a')
-        title = title_elem.text if title_elem else ""
-        company = card.select_one('.corp_name a').text if card.select_one('.corp_name a') else ""
+        company = card.select_one('.corp_name a').text.strip() if card.select_one('.corp_name a') else ""
         
-        # 사람인은 span 태그에 지역, 경력 정보가 나열됨
         conditions = card.select('.job_condition span')
-        addr = conditions[0].text if len(conditions) > 0 else "주소 미상"
-        exp = conditions[1].text if len(conditions) > 1 else "경력 무관"
+        addr = conditions[0].text.strip() if len(conditions) > 0 else "주소 미상"
+        exp = conditions[1].text.strip() if len(conditions) > 1 else "경력 무관"
         
         link = "https://www.saramin.co.kr" + title_elem['href'] if title_elem and 'href' in title_elem.attrs else "#"
-        safe_append("사람인", title, company, addr, link, exp)
+        safe_append("사람인", title_elem.text, company, addr, link, exp)
 except Exception as e:
-    pass
+    print(f"사람인 스크랩 실패: {e}")
 
-# [2] 잡코리아 (수집량 증가, 경력 추출 추가)
+# [2] 잡코리아 (최대 50건)
 try:
     driver.get(f"https://www.jobkorea.co.kr/Search/?stext={keyword}")
     time.sleep(2)
     soup = BeautifulSoup(driver.page_source, 'html.parser')
     for card in soup.select('.list-default .list-post')[:50]:
         title_elem = card.select_one('.title')
-        title = title_elem.text if title_elem else ""
-        company = card.select_one('.name').text if card.select_one('.name') else ""
+        company = card.select_one('.name').text.strip() if card.select_one('.name') else ""
         
-        # 잡코리아는 option 태그 안에 경력, 학력, 지역 정보가 나열됨
-        addr = card.select_one('.loc').text if card.select_one('.loc') else "주소 미상"
+        addr = card.select_one('.loc').text.strip() if card.select_one('.loc') else "주소 미상"
         exp_elem = card.select_one('.exp')
-        exp = exp_elem.text if exp_elem else "경력 무관"
+        exp = exp_elem.text.strip() if exp_elem else "경력 무관"
         
         link = "https://www.jobkorea.co.kr" + title_elem['href'] if title_elem and 'href' in title_elem.attrs else "#"
-        safe_append("잡코리아", title, company, addr, link, exp)
+        safe_append("잡코리아", title_elem.text, company, addr, link, exp)
 except Exception as e:
     pass
 
-# [3] 원티드 (무한 스크롤 다운을 통해 수집량 증가)
+# [3] 원티드 (무한 스크롤, 최대 50건)
 try:
     driver.get(f"https://www.wanted.co.kr/search?query={keyword}")
     time.sleep(2)
-    # 스크롤을 내려 더 많은 데이터를 로딩
-    driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
-    time.sleep(2)
+    # 스크롤 3회 다운
+    for _ in range(3):
+        driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
+        time.sleep(1.5)
     
     soup = BeautifulSoup(driver.page_source, 'html.parser')
-    for card in soup.select('div[class*="JobCard_container"]')[:40]:
+    for card in soup.select('div[class*="JobCard_container"]')[:50]:
         title = card.select_one('strong[class*="JobCard_title"]').text if card.select_one('strong[class*="JobCard_title"]') else ""
         company = card.select_one('span[class*="JobCard_companyName"]').text if card.select_one('span[class*="JobCard_companyName"]') else ""
         
         a_tag = card.find_parent('a') or card.select_one('a')
         link = "https://www.wanted.co.kr" + a_tag['href'] if a_tag and 'href' in a_tag.attrs else "#"
-        safe_append("원티드", title, company, "서울 주요지역", link, "경력") 
+        # 원티드는 목록에서 지역이 자세히 안나오므로 검색키워드 활용
+        safe_append("원티드", title, company, "서울 강남구", link, "경력") 
+except Exception as e:
+    pass
+
+# [4] 리멤버 (최대 50건)
+try:
+    driver.get(f"https://career.rememberapp.co.kr/job/search?keyword={keyword}")
+    time.sleep(3)
+    for _ in range(3):
+        driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
+        time.sleep(1.5)
+        
+    soup = BeautifulSoup(driver.page_source, 'html.parser')
+    for card in soup.select('.job-posting-item')[:50]:
+        title = card.select_one('.title').text if card.select_one('.title') else ""
+        company = card.select_one('.company-name').text if card.select_one('.company-name') else ""
+        
+        a_tag = card.select_one('a')
+        link = "https://career.rememberapp.co.kr" + a_tag['href'] if a_tag and 'href' in a_tag.attrs else "#"
+        safe_append("리멤버", title, company, "서울 종로구", link, "경력")
 except Exception as e:
     pass
 
 driver.quit()
 
-# 비상용 테스트 데이터
+# 테스트 비상 데이터 (오류 시 빈화면 방지)
 if len(all_jobs) == 0:
     all_jobs = [
-        {"platform": "시스템", "title": "서버 접속이 원활하지 않습니다.", "company": "오류 안내", "address": "경기도 성남시 분당구", "link": "#", "experience": "안내"}
+        {"platform": "시스템", "title": "현재 서버 접속이 원활하지 않습니다.", "company": "오류 안내", "address": "경기도 용인시 수지구", "link": "#", "experience": "무관"}
     ]
 
-# 구글 API 위경도 변환
+# 구글 API 위경도 변환 (상세페이지 접속 없이 주소 텍스트 기반 최적화)
 def get_coords(address):
     if not api_key or address == "주소 미상":
         return None, None
